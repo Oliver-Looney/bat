@@ -287,6 +287,7 @@ impl App {
             use_custom_assets: !self.matches.get_flag("no-custom-assets"),
             #[cfg(feature = "lessopen")]
             use_lessopen: self.matches.get_flag("lessopen"),
+            show_git_blame: self.matches.get_flag("show_git_blame"),
         })
     }
 

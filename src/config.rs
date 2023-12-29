@@ -94,6 +94,10 @@ pub struct Config<'a> {
     // Whether or not to use $LESSOPEN if set
     #[cfg(feature = "lessopen")]
     pub use_lessopen: bool,
+
+    /// Whether or not to show git blame
+    #[cfg(feature = "git")]
+    pub show_git_blame: bool,
 }
 
 #[cfg(all(feature = "minimal-application", feature = "paging"))]

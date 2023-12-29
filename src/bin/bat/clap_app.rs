@@ -168,6 +168,13 @@ pub fn build_app(interactive_output: bool) -> Command {
                             "Include N lines of context around added/removed/modified lines when using '--diff'.",
                         ),
                 )
+                .arg(
+                    Arg::new("show_git_blame")
+                        .long("show_git_blame")
+                        .action(ArgAction::SetTrue)
+                        .help("Show git blame.")
+                        .long_help("Show git blame."),
+        )
     }
 
     app = app.arg(
