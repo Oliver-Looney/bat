@@ -32,6 +32,7 @@ pub mod controller;
 mod decorations;
 mod diff;
 pub mod error;
+mod git_blame;
 pub mod input;
 mod less;
 #[cfg(feature = "lessopen")]
