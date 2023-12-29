@@ -16,6 +16,7 @@ use crate::output::OutputType;
 use crate::paging::PagingMode;
 use crate::printer::{InteractivePrinter, OutputHandle, Printer, SimplePrinter};
 
+use crate::git_blame::{get_git_blame, LineGitBlame};
 use clircle::{Clircle, Identifier};
 
 pub struct Controller<'a> {
@@ -164,6 +165,20 @@ impl<'b> Controller<'b> {
 
                     diff
                 }
+                _ if self.config.visible_lines.diff_mode() => {
+                    // Skip non-file inputs in diff mode
+                    return Ok(());
+                }
+                _ => None,
+            }
+        } else {
+            None
+        };
+
+        #[cfg(feature = "git")]
+        let line_git_blames: Option<LineGitBlame> = if self.config.show_git_blame {
+            match opened_input.kind {
+                crate::input::OpenedInputKind::OrdinaryFile(ref path) => get_git_blame(path),
                 _ if self.config.visible_lines.diff_mode() => {
                     // Skip non-file inputs in diff mode
                     return Ok(());
