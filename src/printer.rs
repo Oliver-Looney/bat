@@ -28,6 +28,7 @@ use crate::decorations::{Decoration, GridBorderDecoration, LineNumberDecoration}
 #[cfg(feature = "git")]
 use crate::diff::LineChanges;
 use crate::error::*;
+use crate::git_blame::LineGitBlame;
 use crate::input::OpenedInput;
 use crate::line_range::RangeCheckResult;
 use crate::preprocessor::{expand_tabs, replace_nonprintable};
@@ -166,6 +167,7 @@ impl<'a> InteractivePrinter<'a> {
         assets: &'a HighlightingAssets,
         input: &mut OpenedInput,
         #[cfg(feature = "git")] line_changes: &'a Option<LineChanges>,
+        #[cfg(feature = "git")] line_blames: &'a Option<LineGitBlame>,
     ) -> Result<Self> {
         let theme = assets.get_theme(&config.theme);
 

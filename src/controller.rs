@@ -198,6 +198,8 @@ impl<'b> Controller<'b> {
                 &mut opened_input,
                 #[cfg(feature = "git")]
                 &line_changes,
+                #[cfg(feature = "git")]
+                &line_git_blames,
             )?)
         };
 
@@ -208,6 +210,8 @@ impl<'b> Controller<'b> {
             !is_first,
             #[cfg(feature = "git")]
             &line_changes,
+            #[cfg(feature = "git")]
+            &line_git_blames,
         )
     }
 
@@ -218,6 +222,7 @@ impl<'b> Controller<'b> {
         input: &mut OpenedInput,
         add_header_padding: bool,
         #[cfg(feature = "git")] line_changes: &Option<LineChanges>,
+        #[cfg(feature = "git")] line_blames: &Option<LineGitBlame>,
     ) -> Result<()> {
         if !input.reader.first_line.is_empty() || self.config.style_components.header() {
             printer.print_header(writer, input, add_header_padding)?;
