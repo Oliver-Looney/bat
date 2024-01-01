@@ -23,11 +23,14 @@ use unicode_width::UnicodeWidthChar;
 use crate::assets::{HighlightingAssets, SyntaxReferenceInSet};
 use crate::config::Config;
 #[cfg(feature = "git")]
+use crate::decorations::LineBlameDecoration;
+#[cfg(feature = "git")]
 use crate::decorations::LineChangesDecoration;
 use crate::decorations::{Decoration, GridBorderDecoration, LineNumberDecoration};
 #[cfg(feature = "git")]
 use crate::diff::LineChanges;
 use crate::error::*;
+#[cfg(feature = "git")]
 use crate::git_blame::LineGitBlame;
 use crate::input::OpenedInput;
 use crate::line_range::RangeCheckResult;
@@ -181,6 +184,11 @@ impl<'a> InteractivePrinter<'a> {
 
         // Create decorations.
         let mut decorations: Vec<Box<dyn Decoration>> = Vec::new();
+
+        #[cfg(feature = "git")]
+        if config.show_git_blame {
+            decorations.push(Box::new(LineBlameDecoration::new(&colors)));
+        }
 
         if config.style_components.numbers() {
             decorations.push(Box::new(LineNumberDecoration::new(&colors)));
@@ -732,6 +740,7 @@ pub struct Colors {
     pub git_removed: Style,
     pub git_modified: Style,
     pub line_number: Style,
+    pub line_git_blame: Style,
 }
 
 impl Colors {
@@ -761,6 +770,7 @@ impl Colors {
             git_removed: Red.normal(),
             git_modified: Yellow.normal(),
             line_number: gutter_style,
+            line_git_blame: gutter_style,
         }
     }
 }

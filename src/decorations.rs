@@ -127,6 +127,42 @@ impl Decoration for LineChangesDecoration {
     }
 }
 
+#[cfg(feature = "git")]
+pub(crate) struct LineBlameDecoration {
+    color: Style,
+    cached_wrap: DecorationText,
+    cached_wrap_invalid_at: usize,
+}
+
+#[cfg(feature = "git")]
+impl LineBlameDecoration {
+    pub(crate) fn new(colors: &Colors) -> Self {
+        LineBlameDecoration {
+            color: colors.line_git_blame,
+            cached_wrap_invalid_at: 10000,
+            cached_wrap: DecorationText {
+                text: colors.line_git_blame.paint(" ".repeat(4)).to_string(),
+                width: 4,
+            },
+        }
+    }
+}
+
+#[cfg(feature = "git")]
+impl Decoration for LineBlameDecoration {
+    fn generate(&self, line_number: usize, _printer: &InteractivePrinter) -> DecorationText {
+        let plain: String = format!("{:4}", line_number);
+        DecorationText {
+            width: plain.len(),
+            text: self.color.paint(plain).to_string(),
+        }
+    }
+
+    fn width(&self) -> usize {
+        4
+    }
+}
+
 pub(crate) struct GridBorderDecoration {
     cached: DecorationText,
 }
