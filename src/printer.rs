@@ -71,6 +71,7 @@ pub(crate) trait Printer {
         handle: &mut OutputHandle,
         line_number: usize,
         line_buffer: &[u8],
+        line_blames: &Option<LineGitBlame>,
     ) -> Result<()>;
 }
 
@@ -108,6 +109,7 @@ impl<'a> Printer for SimplePrinter<'a> {
         handle: &mut OutputHandle,
         _line_number: usize,
         line_buffer: &[u8],
+        _line_blames: &Option<LineGitBlame>,
     ) -> Result<()> {
         if !out_of_range {
             if self.config.show_nonprintable {
@@ -464,6 +466,7 @@ impl<'a> Printer for InteractivePrinter<'a> {
         handle: &mut OutputHandle,
         line_number: usize,
         line_buffer: &[u8],
+        line_blames: &Option<LineGitBlame>,
     ) -> Result<()> {
         let line = if self.config.show_nonprintable {
             replace_nonprintable(
@@ -543,7 +546,7 @@ impl<'a> Printer for InteractivePrinter<'a> {
             let decorations = self
                 .decorations
                 .iter()
-                .map(|d| d.generate(line_number, false, self));
+                .map(|d| d.generate(line_number, false, self, line_blames));
 
             for deco in decorations {
                 write!(handle, "{} ", deco.text)?;
@@ -651,7 +654,12 @@ impl<'a> Printer for InteractivePrinter<'a> {
                                                 self.decorations
                                                     .iter()
                                                     .map(|d| d
-                                                        .generate(line_number, true, self)
+                                                        .generate(
+                                                            line_number,
+                                                            true,
+                                                            self,
+                                                            line_blames
+                                                        )
                                                         .text)
                                                     .collect::<Vec<String>>()
                                                     .join(" ")

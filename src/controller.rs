@@ -247,7 +247,13 @@ impl<'b> Controller<'b> {
                 }
             };
 
-            self.print_file_ranges(printer, writer, &mut input.reader, &line_ranges)?;
+            self.print_file_ranges(
+                printer,
+                writer,
+                &mut input.reader,
+                &line_ranges,
+                line_blames,
+            )?;
         }
         printer.print_footer(writer, input)?;
 
@@ -260,6 +266,7 @@ impl<'b> Controller<'b> {
         writer: &mut OutputHandle,
         reader: &mut InputReader,
         line_ranges: &LineRanges,
+        #[cfg(feature = "git")] line_blames: &Option<LineGitBlame>,
     ) -> Result<()> {
         let mut line_buffer = Vec::new();
         let mut line_number: usize = 1;
@@ -274,7 +281,7 @@ impl<'b> Controller<'b> {
                 RangeCheckResult::BeforeOrBetweenRanges => {
                     // Call the printer in case we need to call the syntax highlighter
                     // for this line. However, set `out_of_range` to `true`.
-                    printer.print_line(true, writer, line_number, &line_buffer)?;
+                    printer.print_line(true, writer, line_number, &line_buffer, line_blames)?;
                     mid_range = false;
                 }
 
@@ -289,7 +296,7 @@ impl<'b> Controller<'b> {
                         }
                     }
 
-                    printer.print_line(false, writer, line_number, &line_buffer)?;
+                    printer.print_line(false, writer, line_number, &line_buffer, line_blames)?;
                 }
                 RangeCheckResult::AfterLastRange => {
                     break;

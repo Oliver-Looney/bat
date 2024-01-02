@@ -1,5 +1,6 @@
 #[cfg(feature = "git")]
 use crate::diff::LineChange;
+use crate::git_blame::LineGitBlame;
 use crate::printer::{Colors, InteractivePrinter};
 use nu_ansi_term::Style;
 
@@ -15,6 +16,7 @@ pub(crate) trait Decoration {
         line_number: usize,
         continuation: bool,
         printer: &InteractivePrinter,
+        line_blames: &Option<LineGitBlame>,
     ) -> DecorationText;
     fn width(&self) -> usize;
 }
@@ -44,6 +46,7 @@ impl Decoration for LineNumberDecoration {
         line_number: usize,
         continuation: bool,
         _printer: &InteractivePrinter,
+        _line_blames: &Option<LineGitBlame>,
     ) -> DecorationText {
         if continuation {
             if line_number > self.cached_wrap_invalid_at {
@@ -106,6 +109,7 @@ impl Decoration for LineChangesDecoration {
         line_number: usize,
         continuation: bool,
         printer: &InteractivePrinter,
+        _line_blames: &Option<LineGitBlame>,
     ) -> DecorationText {
         if !continuation {
             if let Some(ref changes) = printer.line_changes {
@@ -141,8 +145,9 @@ impl LineBlameDecoration {
             color: colors.line_git_blame,
             cached_wrap_invalid_at: 10000,
             cached_wrap: DecorationText {
-                text: colors.line_git_blame.paint(" ".repeat(4)).to_string(),
-                width: 4,
+                // todo replace hardcoded value with longest blame length
+                text: colors.line_git_blame.paint(" ".repeat(13)).to_string(),
+                width: 13,
             },
         }
     }
@@ -150,7 +155,13 @@ impl LineBlameDecoration {
 
 #[cfg(feature = "git")]
 impl Decoration for LineBlameDecoration {
-    fn generate(&self, line_number: usize, continuation: bool,  _printer: &InteractivePrinter) -> DecorationText {
+    fn generate(
+        &self,
+        line_number: usize,
+        continuation: bool,
+        _printer: &InteractivePrinter,
+        line_blames: &Option<LineGitBlame>,
+    ) -> DecorationText {
         if continuation {
             if line_number > self.cached_wrap_invalid_at {
                 let new_width = self.cached_wrap.width + 1;
@@ -162,7 +173,14 @@ impl Decoration for LineBlameDecoration {
 
             self.cached_wrap.clone()
         } else {
-            let plain: String = format!("{:4}", line_number);
+            let plain: String = match line_blames {
+                Some(blames) => match blames.get(&(line_number as u32)) {
+                    Some(blame_info) => format!("{:4}", blame_info.name),
+                    None => format!("{:4}", "You"),
+                },
+                None => format!("{:4}", "You"),
+            };
+
             DecorationText {
                 width: plain.len(),
                 text: self.color.paint(plain).to_string(),
@@ -171,7 +189,7 @@ impl Decoration for LineBlameDecoration {
     }
 
     fn width(&self) -> usize {
-        4
+        13
     }
 }
 
@@ -196,6 +214,7 @@ impl Decoration for GridBorderDecoration {
         _line_number: usize,
         _continuation: bool,
         _printer: &InteractivePrinter,
+        _line_blames: &Option<LineGitBlame>,
     ) -> DecorationText {
         self.cached.clone()
     }
