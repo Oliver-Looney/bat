@@ -2,6 +2,7 @@
 use crate::diff::LineChange;
 use crate::printer::{Colors, InteractivePrinter};
 use nu_ansi_term::Style;
+use crate::git_blame::LineGitBlame;
 
 #[derive(Debug, Clone)]
 pub(crate) struct DecorationText {
@@ -128,40 +129,51 @@ impl Decoration for LineChangesDecoration {
 }
 
 #[cfg(feature = "git")]
-pub(crate) struct LineBlameDecoration {
+pub(crate) struct LineBlameDecoration<'a> {
     color: Style,
-    cached_wrap: DecorationText,
     cached_wrap_invalid_at: usize,
+    line_git_blame: &'a LineGitBlame,
 }
 
 #[cfg(feature = "git")]
-impl LineBlameDecoration {
-    pub(crate) fn new(colors: &Colors) -> Self {
+impl<'a> LineBlameDecoration<'a> {
+    pub(crate) fn new(colors: &Colors, line_git_blame: &'a LineGitBlame) -> Self {
         LineBlameDecoration {
             color: colors.line_git_blame,
             cached_wrap_invalid_at: 10000,
-            cached_wrap: DecorationText {
-                text: colors.line_git_blame.paint(" ".repeat(4)).to_string(),
-                width: 4,
-            },
+            line_git_blame,
         }
     }
 }
 
 #[cfg(feature = "git")]
-impl Decoration for LineBlameDecoration {
-    fn generate(&self, line_number: usize, _printer: &InteractivePrinter) -> DecorationText {
-        let plain: String = format!("{:4}", line_number);
+impl<'a> Decoration for LineBlameDecoration<'a> {
+    fn generate(&self, line_number: usize, continuation: bool, _printer: &InteractivePrinter) -> DecorationText {
+        if !continuation {
+            if let Some(name) = self.line_git_blame.get(&(line_number as u32)) {
+                return DecorationText {
+                    width: name.name.len(),
+                    text: self.color.paint(name.name.clone()).to_string(),
+                };
+            }
+        }
+
+        // Handle the case when line_git_blame is None or the line number is out of bounds
+        // ...
+
+        // Default case, return an empty text
         DecorationText {
-            width: plain.len(),
-            text: self.color.paint(plain).to_string(),
+            width: 3,
+            text: "You".to_string(),
         }
     }
 
     fn width(&self) -> usize {
-        4
+        10
     }
 }
+
+
 
 pub(crate) struct GridBorderDecoration {
     cached: DecorationText,

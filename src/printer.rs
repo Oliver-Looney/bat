@@ -160,17 +160,19 @@ pub(crate) struct InteractivePrinter<'a> {
     content_type: Option<ContentType>,
     #[cfg(feature = "git")]
     pub line_changes: &'a Option<LineChanges>,
+    #[cfg(feature = "git")]
+    pub line_blames: Option<LineGitBlame>,
     highlighter_from_set: Option<HighlighterFromSet<'a>>,
     background_color_highlight: Option<Color>,
 }
 
 impl<'a> InteractivePrinter<'a> {
     pub(crate) fn new(
-        config: &'a Config,
+        config: &'static Config,
         assets: &'a HighlightingAssets,
         input: &mut OpenedInput,
         #[cfg(feature = "git")] line_changes: &'a Option<LineChanges>,
-        #[cfg(feature = "git")] line_blames: &'a Option<LineGitBlame>,
+        #[cfg(feature = "git")] line_blames: Option<LineGitBlame>,
     ) -> Result<Self> {
         let theme = assets.get_theme(&config.theme);
 
@@ -187,7 +189,9 @@ impl<'a> InteractivePrinter<'a> {
 
         #[cfg(feature = "git")]
         if config.show_git_blame {
-            decorations.push(Box::new(LineBlameDecoration::new(&colors)));
+            if let Some(line_blame) = &line_blames {
+                decorations.push(Box::new(LineBlameDecoration::new(&colors, line_blame)));
+            }
         }
 
         if config.style_components.numbers() {
@@ -249,6 +253,8 @@ impl<'a> InteractivePrinter<'a> {
             ansi_style: AnsiStyle::new(),
             #[cfg(feature = "git")]
             line_changes,
+            #[cfg(feature = "git")]
+            line_blames,
             highlighter_from_set,
             background_color_highlight,
         })

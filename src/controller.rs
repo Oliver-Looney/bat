@@ -189,6 +189,9 @@ impl<'b> Controller<'b> {
             None
         };
 
+        #[cfg(feature = "git")]
+            let line_blames = line_git_blames.clone();
+
         let mut printer: Box<dyn Printer> = if self.config.loop_through {
             Box::new(SimplePrinter::new(self.config))
         } else {
@@ -199,7 +202,7 @@ impl<'b> Controller<'b> {
                 #[cfg(feature = "git")]
                 &line_changes,
                 #[cfg(feature = "git")]
-                &line_git_blames,
+                    line_blames,
             )?)
         };
 
@@ -210,8 +213,6 @@ impl<'b> Controller<'b> {
             !is_first,
             #[cfg(feature = "git")]
             &line_changes,
-            #[cfg(feature = "git")]
-            &line_git_blames,
         )
     }
 
@@ -222,7 +223,6 @@ impl<'b> Controller<'b> {
         input: &mut OpenedInput,
         add_header_padding: bool,
         #[cfg(feature = "git")] line_changes: &Option<LineChanges>,
-        #[cfg(feature = "git")] line_blames: &Option<LineGitBlame>,
     ) -> Result<()> {
         if !input.reader.first_line.is_empty() || self.config.style_components.header() {
             printer.print_header(writer, input, add_header_padding)?;

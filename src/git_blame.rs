@@ -4,10 +4,11 @@ use std::{collections::HashMap, u32};
 
 use git2::{Blame, BlameOptions, Oid, Repository};
 
+#[derive(Clone)]
 pub struct GitBlameInfo {
-    name: String,
-    commit_id: Oid,
-    commit_date: i64,
+    pub(crate) name: String,
+    pub(crate) commit_id: Oid,
+    pub(crate) commit_date: i64,
 }
 
 pub type LineGitBlame = HashMap<u32, GitBlameInfo>;
