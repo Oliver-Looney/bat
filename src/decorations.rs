@@ -150,11 +150,23 @@ impl LineBlameDecoration {
 
 #[cfg(feature = "git")]
 impl Decoration for LineBlameDecoration {
-    fn generate(&self, line_number: usize, _printer: &InteractivePrinter) -> DecorationText {
-        let plain: String = format!("{:4}", line_number);
-        DecorationText {
-            width: plain.len(),
-            text: self.color.paint(plain).to_string(),
+    fn generate(&self, line_number: usize, continuation: bool,  _printer: &InteractivePrinter) -> DecorationText {
+        if continuation {
+            if line_number > self.cached_wrap_invalid_at {
+                let new_width = self.cached_wrap.width + 1;
+                return DecorationText {
+                    text: self.color.paint(" ".repeat(new_width)).to_string(),
+                    width: new_width,
+                };
+            }
+
+            self.cached_wrap.clone()
+        } else {
+            let plain: String = format!("{:4}", line_number);
+            DecorationText {
+                width: plain.len(),
+                text: self.color.paint(plain).to_string(),
+            }
         }
     }
 
