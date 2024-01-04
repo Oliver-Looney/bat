@@ -2,6 +2,7 @@
 use crate::diff::LineChange;
 use crate::git_blame::LineGitBlame;
 use crate::printer::{Colors, InteractivePrinter};
+use chrono::{DateTime, TimeZone, Utc};
 use nu_ansi_term::Style;
 
 #[derive(Debug, Clone)]
@@ -146,8 +147,8 @@ impl LineBlameDecoration {
             cached_wrap_invalid_at: 10000,
             cached_wrap: DecorationText {
                 // todo replace hardcoded value with longest blame length
-                text: colors.line_git_blame.paint(" ".repeat(13)).to_string(),
-                width: 13,
+                text: colors.line_git_blame.paint(" ".repeat(13 + 10)).to_string(),
+                width: 13 + 10,
             },
         }
     }
@@ -159,7 +160,7 @@ impl Decoration for LineBlameDecoration {
         &self,
         line_number: usize,
         continuation: bool,
-        _printer: &InteractivePrinter,
+        printer: &InteractivePrinter,
         line_blames: &Option<LineGitBlame>,
     ) -> DecorationText {
         if continuation {
@@ -175,10 +176,34 @@ impl Decoration for LineBlameDecoration {
         } else {
             let plain: String = match line_blames {
                 Some(blames) => match blames.get(&(line_number as u32)) {
-                    Some(blame_info) => format!("{:4}", blame_info.name),
-                    None => format!("{:4}", "You"),
+                    Some(blame_info) => {
+                        if let Some(ref changes) = printer.line_changes {
+                            if let Some(ref lineChange) = changes.get(&(line_number as u32)) {
+                                if **lineChange == LineChange::Added || **lineChange == LineChange::Modified{
+                                    format!("{:23}", "You Today")
+                                } else {
+                                    let commit_date: i64 = blame_info.commit_date;
+                                    let commit_datetime: DateTime<Utc> = Utc.timestamp(commit_date, 0);
+                                    let local_datetime: DateTime<chrono::Local> =
+                                        commit_datetime.with_timezone(&chrono::Local);
+                                    let formatted_date = local_datetime.format("%d/%m/%Y").to_string();
+                                    format!("{:23}", format!("{} {}", blame_info.name, formatted_date))
+                                }
+                            } else {
+                                let commit_date: i64 = blame_info.commit_date;
+                                let commit_datetime: DateTime<Utc> = Utc.timestamp(commit_date, 0);
+                                let local_datetime: DateTime<chrono::Local> =
+                                    commit_datetime.with_timezone(&chrono::Local);
+                                let formatted_date = local_datetime.format("%d/%m/%Y").to_string();
+                                format!("{:23}", format!("{} {}", blame_info.name, formatted_date))
+                            }
+                        } else {
+                            format!("{:23}", "You Today")
+                        }
+                    }
+                    None => format!("{:23}", "You Today"),
                 },
-                None => format!("{:4}", "You"),
+                None => format!("{:23}", "error no blames found"),
             };
 
             DecorationText {
@@ -189,7 +214,7 @@ impl Decoration for LineBlameDecoration {
     }
 
     fn width(&self) -> usize {
-        13
+        13 + 10
     }
 }
 
