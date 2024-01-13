@@ -376,31 +376,45 @@ impl<'a> Printer for InteractivePrinter<'a> {
                 writeln!(handle)?;
             }
         }
+        let mut cursor_total: usize = 0;
+        let mut cursor: usize = 0;
 
         header_components.iter().try_for_each(|component| {
             self.print_header_component_indent(handle)?;
 
             match component {
-                StyleComponent::HeaderFilename => writeln!(
-                    handle,
-                    "{}{}{}",
-                    description
-                        .kind()
-                        .map(|kind| format!("{}: ", kind))
-                        .unwrap_or_else(|| "".into()),
-                    self.colors.header_value.paint(description.title()),
-                    mode
-                ),
-
+                StyleComponent::HeaderFilename => {
+                    let header_text = description.title();
+                    if header_text.len() > self.config.term_width {
+                        // Wrap the header if it's too long.
+                        write!(
+                            handle,
+                            "{indentation}{}\n",
+                            self.colors.header_value.paint(&*header_text),
+                            indentation = " ".repeat(cursor),
+                        )?;
+                        cursor = 0;
+                    } else {
+                        // Regular handling without breaking the indent.
+                        write!(
+                            handle,
+                            "{}{}\n",
+                            " ".repeat(cursor),
+                            self.colors.header_value.paint(&*header_text),
+                        )?;
+                        cursor += header_text.len();
+                    }
+                }
                 StyleComponent::HeaderFilesize => {
                     let bsize = metadata
                         .size
                         .map(|s| format!("{}", ByteSize(s)))
                         .unwrap_or_else(|| "-".into());
-                    writeln!(handle, "Size: {}", self.colors.header_value.paint(bsize))
+                    writeln!(handle, "Size: {}", self.colors.header_value.paint(bsize))?;
                 }
-                _ => Ok(()),
+                _ => (),
             }
+            Ok::<(), Error>(())
         })?;
 
         if self.config.style_components.grid() {
@@ -571,7 +585,7 @@ impl<'a> Printer for InteractivePrinter<'a> {
                                     true_color,
                                     colored_output,
                                     italics,
-                                    background_color
+                                    background_color,
                                 )
                             )?;
 
@@ -637,7 +651,7 @@ impl<'a> Printer for InteractivePrinter<'a> {
                                     if panel_wrap.is_none() {
                                         panel_wrap = if self.panel_width > 0 {
                                             Some(format!(
-                                                "{} ",
+                                                "{} ", // magic sauce
                                                 self.decorations
                                                     .iter()
                                                     .map(|d| d
@@ -661,7 +675,7 @@ impl<'a> Printer for InteractivePrinter<'a> {
                                             self.config.true_color,
                                             self.config.colored_output,
                                             self.config.use_italic_text,
-                                            background_color
+                                            background_color,
                                         ),
                                         panel_wrap.clone().unwrap()
                                     )?;
@@ -687,7 +701,7 @@ impl<'a> Printer for InteractivePrinter<'a> {
                                     self.config.true_color,
                                     self.config.colored_output,
                                     self.config.use_italic_text,
-                                    background_color
+                                    background_color,
                                 )
                             )?;
                         }
